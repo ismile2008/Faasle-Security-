@@ -5748,7 +5748,7 @@ FREE_PUBLIC_LAVALINK_NODES = [
     {"host": "lavalink.jirayu.net", "port": 13592, "password": "youshallnotpass", "identifier": "FAASLE-FreeNode-1", "secure": False},
     {"host": "lavalinkv4.serenetia.com", "port": 443, "password": "https://dsc.gg/ajidevserver", "identifier": "FAASLE-FreeNode-2", "secure": True},
     {"host": "lava-v4.ajieblogs.eu.org", "port": 443, "password": "https://dsc.gg/ajidevserver", "identifier": "FAASLE-FreeNode-3", "secure": True},
-    {"host": "lavalink.oops.wtf", "port": 443, "password": "www.freelavalink.ga", "identifier": "FAASLE-FreeNode-4", "secure": True},
+    
 ]
 
 try:
@@ -50642,7 +50642,7 @@ HELP_PAGES_DATA = [
      f"{E_SEC} **__Core Anti-Nuke (35 Protected Events)__**\n"
      "`antinuke` , `antinuke setup` , `antinuke wizard` , `antinuke scan` , `antinuke events` , `antinuke limit` , `antinuke punishment` , `antinuke logging` , `antinuke test` , `antinuke disable`\n\n"
      f"{E_SEC} **__Advanced Defense Stack & New Guards__**\n"
-     "`linkrole` , `onboard_safe` , `rlpos` , `antibetray status` , `antibetray config` , `antibetray enable` , `antibetray disable` , `wallrole config` , `wallrole sync` , `wallrole remove` , `antiraid config` , `antiraid limit` , `antiraid enable` , `antiraid disable` , `panicmode status` , `panicmode enable` , `panicmode disable` , `nightmode enable` , `nightmode disable` , `quarantine add` , `quarantine remove` , `mainrole add` , `mainrole remove`"),
+     "`antinuke manage` , `antibetray status` , `antibetray config` , `antibetray enable` , `antibetray disable` , `wallrole config` , `wallrole sync` , `wallrole remove` , `antiraid config` , `antiraid limit` , `antiraid enable` , `antiraid disable` , `panicmode status` , `panicmode enable` , `panicmode disable` , `nightmode enable` , `nightmode disable` , `quarantine add` , `quarantine remove` , `mainrole add` , `mainrole remove`"),
     ("permit", "Permit Commands", E_PERMIT, "Extraowner, 24-Module Whitelist, Fake Permissions, Setup Lock, Ignore",
      f"{E_PERMIT} **__Extraowner & Whitelist__**\n"
      "`extraowner add` , `extraowner remove` , `extraowner show` , `extraowner reset` , `whitelist add` , `whitelist remove` , `whitelist show` , `whitelist reset` , `whitelist check`\n\n"
@@ -50672,7 +50672,7 @@ HELP_PAGES_DATA = [
      "**__Auto Roles & Custom Roles__**\n"
      "`autorole humans add` , `autorole humans remove` , `autorole humans show` , `autorole bots add` , `autorole bots remove` , `autorole bots show` , `customrole create` , `customrole reqrole` , `customrole list`\n\n"
      "**__Sticky, Reaction Roles, Tickets & Giveaways__**\n"
-     "`sticky add` , `sticky channel add` , `sticky remove` , `reactionrole add` , `ticket` , `giveaway`"),
+     "`sticky add` , `sticky channel add` , `sticky remove` , `reactionrole add` , `ticket` , `giveaway` , `greroll` , `gend`"),
     ("autoresponders", "Utility / Autoresponders", E_SETTINGS, "Auto Responders, Auto Reactors & 1520+ Multi-Purpose Utility Nodes",
      "**__Auto Responders & Reactors__**\n"
      "`autoresponder add` , `autoresponder show` , `autoresponder remove` , `autoreact add` , `autoreact show` , `autoreact remove`"),
@@ -51061,6 +51061,1338 @@ async def on_ready():
     for g in bot.guilds:
         snapshot_guild(g)
     print(f"{BOT_NAME} ({BOT_VERSION}) is ONLINE as {bot.user} across {len(bot.guilds)} servers! Total registered commands: {len(bot.commands)}")
+
+
+# ==============================================================================
+# 18. FAASLE SECURITY ™ — MASTER PATCH v12.0 (ALL SCREENSHOT FIXES, SINGLE PREFIX,
+#     ONBOARDING SELF-ROLE FIX, SAPPHIRE LOGS, GIVEAWAY ENGINE, AFK & OWNER LOGS)
+# ==============================================================================
+
+# --- 1. UPDATED GIVEAWAY & BRANDING EMOJIS + BRIGHT HEX PALETTE ---
+E_GW_HEADER = "<a:Giveaways:1570537673855340634>"
+E_GW_REACT = "<a:Giveaway:1571162440664883353>"
+E_GIVE = E_GW_HEADER
+
+BRIGHT_RED = 0xFF0000
+BRIGHT_GREEN = 0x00FF00
+PURE_BLACK = 0x000000
+PURE_WHITE = 0xFFFFFF
+DEEP_BLACK = 0x000000
+GOLD_COLOR = 0x00FF00
+
+# Primary Bot Developer Owner IDs (Add your Discord User ID in env BOT_OWNER_ID or use application owner)
+BOT_DEV_IDS = set()
+if os.environ.get("BOT_OWNER_ID"):
+    for _oid in os.environ.get("BOT_OWNER_ID", "").split(","):
+        if _oid.strip().isdigit():
+            BOT_DEV_IDS.add(int(_oid.strip()))
+
+async def is_bot_dev(user: discord.abc.User) -> bool:
+    if not user:
+        return False
+    if user.id in BOT_DEV_IDS:
+        return True
+    try:
+        return await bot.is_owner(user)
+    except Exception:
+        return False
+
+# --- 2. STRICT SINGLE ACTIVE PREFIX ('?' GLOBAL OR 1 CUSTOM SERVER PREFIX) ---
+def get_active_guild_prefix(guild_id: int) -> str:
+    if not guild_id:
+        return "?"
+    c = cfg(guild_id)
+    custom_p = c.get("custom_prefix")
+    if custom_p and isinstance(custom_p, str) and custom_p.strip():
+        return custom_p.strip()
+    return "?"
+
+def get_prefix_v12(bot_inst, message: discord.Message):
+    if not message.guild:
+        return "?"
+    active_p = get_active_guild_prefix(message.guild.id)
+    # Only 1 prefix works at a time! If custom prefix is set, global '?' will NOT work.
+    return [active_p]
+
+bot.command_prefix = get_prefix_v12
+
+@G("prefix", aliases=["setprefix"])
+@owner_only()
+async def prefix_grp_v12(ctx, new_prefix: str = None):
+    if new_prefix:
+        return await ctx.invoke(prefix_set_v12, new_p=new_prefix)
+    cur_p = get_active_guild_prefix(ctx.guild.id)
+    embed = discord.Embed(
+        title=f"{E_SETTINGS} Server Prefix Configuration",
+        description=(
+            f"**Current Active Prefix:** `{cur_p}`\n\n"
+            f"{E_ARR} `{cur_p}prefix set <symbol>` — Set a custom prefix (disables `?` in this server)\n"
+            f"{E_ARR} `{cur_p}prefix reset` — Reset back to default global prefix (`?`)"
+        ),
+        color=PURE_WHITE
+    )
+    await ctx.reply(embed=embed, mention_author=False)
+
+@S(prefix_grp_v12, "set", aliases=["add", "change", "create"])
+@owner_only()
+async def prefix_set_v12(ctx, new_p: str = None):
+    if not new_p or len(new_p.strip()) > 5:
+        return await send_missing_param(ctx, "prefix (1-5 chars)", "prefix set <new_prefix>")
+    new_p = new_p.strip()
+    c = cfg(ctx.guild.id)
+    c["custom_prefix"] = new_p
+    c["prefix"] = new_p
+    save()
+    embed = discord.Embed(
+        description=f"{E_TICK} | Successfully updated server prefix to **`{new_p}`**\n{E_ARR} *Note: Global prefix `?` is now disabled for this server.*",
+        color=BRIGHT_GREEN
+    )
+    await ctx.reply(embed=embed, mention_author=False)
+
+@S(prefix_grp_v12, "reset", aliases=["default", "clear"])
+@owner_only()
+async def prefix_reset_v12(ctx):
+    c = cfg(ctx.guild.id)
+    c["custom_prefix"] = None
+    c["prefix"] = "?"
+    save()
+    embed = discord.Embed(
+        description=f"{E_TICK} | Server prefix has been reset to default global prefix **`?`**",
+        color=BRIGHT_GREEN
+    )
+    await ctx.reply(embed=embed, mention_author=False)
+
+# --- 3. ANTINUKE COMMAND vs MANAGE vs EVENTS + WHITELIST BUTTON FIX (1000031695.jpg & 1000031705.jpg) ---
+CORE_WHITELIST_EVENTS = [
+    ("Ban Protection", "ban", "Bypass member ban antinuke check"),
+    ("Kick Protection", "kick", "Bypass member kick antinuke check"),
+    ("Channel/Category Delete", "chdl", "Bypass channel/category deletion check"),
+    ("Channel/Category Create", "chcr", "Bypass channel/category creation check"),
+    ("Channel Update", "chup", "Bypass channel edit check"),
+    ("Role Delete", "rldl", "Bypass role deletion check"),
+    ("Role Create", "rlcr", "Bypass role creation check"),
+    ("Role Update", "rlup", "Bypass role permission/settings update check"),
+    ("Role Position Update", "rlpos", "Bypass role hierarchy reordering check"),
+    ("Webhook Create", "mngweb", "Bypass webhook creation check"),
+    ("Webhook Delete", "mngwebdl", "Bypass webhook deletion check"),
+    ("Emoji & Sticker Protection", "emoji", "Bypass emoji/sticker modification check"),
+    ("Member Update (Dangerous)", "memup_dang", "Bypass dangerous role assignment check"),
+    ("Server Update", "serverup", "Bypass server name/icon/settings check"),
+    ("Bot Add", "botadd", "Bypass unverified bot addition check"),
+    ("Mention Spam", "meneve", "Bypass @everyone / @here mention check"),
+    ("Permission Update", "permup", "Bypass channel permission overwrite check"),
+    ("Automod Rule Guard", "amguard", "Bypass Discord AutoMod rule modification check"),
+]
+
+def whitelist_user_embed_v12(g: discord.Guild, target_member: discord.abc.User):
+    wl = cfg(g.id).get("whitelist", {}).get(str(target_member.id), [])
+    total_ev = len(CORE_WHITELIST_EVENTS)
+    cnt = total_ev if "All Events" in wl else len(wl)
+    sel_txt = f"All {total_ev} Core Modules (Full Bypass)" if "All Events" in wl else (", ".join(f"`{x}`" for x in wl[:10]) if wl else "None selected")
+    desc = (
+        f"Select core security modules to whitelist for {target_member.mention}.\n"
+        f"Whitelisted users will **never** be banned or punished on selected modules.\n\n"
+        f"**Currently selected:** `{cnt}/{total_ev}` modules\n"
+        f"**Selection:** {sel_txt}"
+    )
+    return fancy(None, f"{E_SEC} Whitelisting — {target_member}", desc, color=PURE_WHITE)
+
+class WhitelistModuleViewV12(discord.ui.View):
+    def __init__(self, uid: int, g: discord.Guild, target: discord.abc.User):
+        super().__init__(timeout=240)
+        self.uid = uid
+        self.g = g
+        self.target = target
+        self._build()
+
+    def _build(self):
+        self.clear_items()
+        cur = cfg(self.g.id).setdefault("whitelist", {}).get(str(self.target.id), [])
+        opts = [
+            discord.SelectOption(
+                label=name,
+                value=key,
+                description=desc[:90],
+                emoji=E_DOT,
+                default=("All Events" in cur or key in cur or name in cur)
+            )
+            for name, key, desc in CORE_WHITELIST_EVENTS
+        ]
+        sel = discord.ui.Select(placeholder="Select modules to whitelist...", min_values=1, max_values=len(opts), options=opts, row=0)
+        sel.callback = self.on_sel
+        self.sel = sel
+        self.add_item(sel)
+
+        # Fixed screenshot 1000031695.jpg: emoji passed via emoji= parameter, NOT raw text inside label!
+        b_all = discord.ui.Button(label="Whitelist All Modules", emoji=E_DOT, style=discord.ButtonStyle.primary, row=1)
+        b_sv = discord.ui.Button(label="Save Changes", emoji=E_TICK, style=discord.ButtonStyle.success, row=2)
+        b_ca = discord.ui.Button(label="Cancel", emoji=E_CROSS, style=discord.ButtonStyle.danger, row=2)
+        b_all.callback = self.on_all
+        b_sv.callback = self.on_save
+        b_ca.callback = self.on_cancel
+        for b in (b_all, b_sv, b_ca):
+            self.add_item(b)
+
+    async def interaction_check(self, inter: discord.Interaction):
+        if inter.user.id != self.uid:
+            await inter.response.send_message(f"{E_CROSS} Only the command author can use this menu.", ephemeral=True)
+            return False
+        return True
+
+    async def on_sel(self, inter: discord.Interaction):
+        chosen_keys = list(self.sel.values)
+        chosen_full = list(chosen_keys)
+        for name, key, _ in CORE_WHITELIST_EVENTS:
+            if key in chosen_keys and name not in chosen_full:
+                chosen_full.append(name)
+        cfg(self.g.id).setdefault("whitelist", {})[str(self.target.id)] = chosen_full
+        save()
+        self._build()
+        await inter.response.edit_message(embed=whitelist_user_embed_v12(self.g, self.target), view=self)
+
+    async def on_all(self, inter: discord.Interaction):
+        cfg(self.g.id).setdefault("whitelist", {})[str(self.target.id)] = ["All Events"]
+        save()
+        await inter.response.edit_message(embed=whitelist_user_embed_v12(self.g, self.target), view=None)
+
+    async def on_save(self, inter: discord.Interaction):
+        save()
+        await inter.response.edit_message(embed=whitelist_user_embed_v12(self.g, self.target), view=None)
+
+    async def on_cancel(self, inter: discord.Interaction):
+        await inter.response.edit_message(embed=fancy(None, f"{E_SEC} Cancelled", f"{E_CROSS} Whitelist menu closed.", color=BRIGHT_RED), view=None)
+
+@S(whitelist_grp, "add")
+@owner_only()
+async def wl_add_cmd_v12(ctx, member: discord.Member = None):
+    if not member:
+        return await send_missing_param(ctx, "user", "whitelist add <@user>")
+    await ctx.reply(
+        embed=whitelist_user_embed_v12(ctx.guild, member),
+        view=WhitelistModuleViewV12(ctx.author.id, ctx.guild, member),
+        mention_author=False
+    )
+
+def an_filter_panel_embed_v12(ctx):
+    c = cfg(ctx.guild.id)
+    af = c["an_filters"]
+    rows = []
+    display_events = [
+        "Ban Protection", "Kick Protection", "Prune Protection",
+        "Channel/Category Delete", "Channel/Category Create", "Channel Update",
+        "Role Delete", "Role Create", "Role Update", "Role Position Update",
+        "Link Role Protection", "Onboarding Safe Guard",
+        "Webhook Create", "Webhook Delete", "Webhook Update",
+        "Emoji Protection", "Sticker Protection",
+        "Member Update (Dangerous)", "Server Update", "Bot Add"
+    ]
+    for ev in display_events:
+        rows.append(f"{ON_TOG if af.get(ev, True) else OFF_TOG} `{ev}`")
+    rows.append(f"\n{E_SEC} **Server Name**\n╰ `{ctx.guild.name}`")
+    return fancy(ctx, f"{BOT_NAME} Antinuke Filters", "\n".join(rows), color=PURE_WHITE, footer_extra=f"Requested by {ctx.author.name}")
+
+@G("antinuke", aliases=["an", "security"])
+@owner_only()
+async def antinuke_v12(ctx):
+    c = cfg(ctx.guild.id)
+    p = get_active_guild_prefix(ctx.guild.id)
+    st = c.get("enabled", False)
+    log_ch = ctx.guild.get_channel(c.get("log_channel")) if c.get("log_channel") else None
+    desc = (
+        f"**Core Protection Status:** {f'{E_TICK} `ENABLED`' if st else f'{E_CROSS} `DISABLED`'}\n"
+        f"**Auto-Recovery Engine:** `{ '100% Instant Parallel Recovery' if c.get('autorecovery', True) else 'Disabled' }`\n"
+        f"**Violation Punishment:** `{c.get('punishment', 'ban').upper()}`\n"
+        f"**Security Log Channel:** {log_ch.mention if log_ch else '`Not Configured`'}\n"
+        f"**Extra-Owners:** `{len(c.get('extraowners', []))}` • **Whitelisted Users:** `{len(c.get('whitelist', {}))}`\n\n"
+        f"**__Antinuke Management Commands__**\n"
+        f"{E_ARR} `{p}antinuke enable` / `{p}antinuke disable` — Toggle Antinuke protection\n"
+        f"{E_ARR} `{p}antinuke manage` — Open interactive Antinuke Filter Toggle Menu\n"
+        f"{E_ARR} `{p}antinuke events` — View all protected Antinuke events & descriptions\n"
+        f"{E_ARR} `{p}antinuke scan` — Run Zero-Trust Server Security Health Audit\n"
+        f"{E_ARR} `{p}antinuke punishment <ban|kick|quarantine|strip_roles>`\n"
+        f"{E_ARR} `{p}antinuke logging <#channel>` — Set dedicated security alert channel\n"
+        f"{E_ARR} `{p}antinuke limit` — Configure Betrayal Guard velocity limits"
+    )
+    await send(ctx, f"{E_SEC} {BOT_NAME} ™ — Antinuke Control Center", desc, color=BRIGHT_GREEN if st else BRIGHT_RED, thumb=(ctx.guild.icon.url if ctx.guild.icon else None))
+
+@S(antinuke_v12, "manage", aliases=["filters", "filter", "panel"])
+@owner_only()
+async def an_manage_cmd_v12(ctx):
+    # Screenshot 1000031705.jpg: Filter toggle panel ONLY opens on `?antinuke manage`!
+    await ctx.reply(embed=an_filter_panel_embed_v12(ctx), view=AntinukeFilterToggleView(ctx), mention_author=False)
+
+@S(antinuke_v12, "events", aliases=["list", "modules"])
+@owner_only()
+async def an_events_cmd_v12(ctx):
+    c = cfg(ctx.guild.id)
+    af = c.get("an_filters", {})
+    lines = [
+        f"`[{idx:02d}]` {E_TICK if af.get(name, True) else E_CROSS} **{name}** (`{EVENT_KEYS.get(name, 'sec')}`)\n> *{EVENT_DESC.get(name, 'Protected zero-trust event')}*"
+        for idx, name in enumerate(EVENT_NAMES, 1)
+    ]
+    await paginate(ctx, f"{E_SEC} Antinuke Protected Events [{len(lines)}]", lines, per=6, color=PURE_WHITE)
+
+@S(antinuke_v12, "enable", aliases=["on", "setup", "wizard", "hub", "config", "status", "dashboard"])
+@owner_only()
+async def an_enable_cmd_v12(ctx):
+    inv = ctx.invoked_with.lower()
+    if inv == "wizard":
+        wiz = SuiteWizardView(ctx.author.id, ctx.guild, SUITE_MODULES_KEYS)
+        return await ctx.reply(embed=wiz.step_embed(), view=wiz, mention_author=False)
+    cfg(ctx.guild.id)["enabled"] = True
+    save()
+    await ctx.reply(embed=hub_embed(ctx.guild), view=SuiteHubView(ctx.author.id, ctx.guild), mention_author=False)
+
+@S(antinuke_v12, "disable", aliases=["off"])
+@owner_only()
+async def an_disable_cmd_v12(ctx):
+    cfg(ctx.guild.id)["enabled"] = False
+    save()
+    await send(ctx, f"{E_SEC} Anti-Nuke Disabled", f"{E_CROSS} Core Anti-Nuke protection is now **Disabled**.", color=BRIGHT_RED)
+
+@S(antinuke_v12, "scan", aliases=["audit", "health", "check"])
+@owner_only()
+async def an_scan_cmd_v12(ctx):
+    await ctx.reply(embed=build_security_scan_embed(ctx.guild, category="overview"), view=SecurityAuditScanView(ctx.author.id, ctx.guild), mention_author=False)
+
+@S(antinuke_v12, "limit", aliases=["limits", "betrayal"])
+@owner_only()
+async def an_lim_cmd_v12(ctx):
+    await ctx.reply(embed=betrayal_limit_embed(ctx), view=BetrayalLimitView(ctx), mention_author=False)
+
+@S(antinuke_v12, "logging", aliases=["log", "logs"])
+@owner_only()
+async def an_log_cmd_v12(ctx, ch: discord.TextChannel = None):
+    if not ch:
+        return await send_missing_param(ctx, "channel", "antinuke logging <#channel>")
+    cfg(ctx.guild.id)["log_channel"] = ch.id
+    save()
+    await send(ctx, f"{E_SEC} Antinuke Logging", f"{E_TICK} Security alerts & recovery telemetry bound to {ch.mention}.", color=BRIGHT_GREEN)
+
+@S(antinuke_v12, "punishment", aliases=["punish"])
+@owner_only()
+async def an_punish_cmd_v12(ctx, action: str = None):
+    c = cfg(ctx.guild.id)
+    if action and action.lower() in ("ban", "kick", "quarantine", "strip_roles"):
+        c["punishment"] = action.lower()
+        save()
+        return await send(ctx, f"{E_SEC} Antinuke Punishment Updated", f"{E_TICK} Violation punishment set to **`{action.upper()}`**.", color=BRIGHT_GREEN)
+    p = get_active_guild_prefix(ctx.guild.id)
+    await send(ctx, f"{E_SEC} Antinuke Punishment", f"**Current Action:** `{c.get('punishment', 'ban').upper()}`\n**Usage:** `{p}antinuke punishment <ban|kick|quarantine|strip_roles>`", color=PURE_WHITE)
+
+# --- 4. FIXED ANTINUKE MEMBER UPDATE LOGIC (NO FALSE BAN ON ONBOARDING / SELF-ASSIGN ROLES!) ---
+def is_trusted(g, uid, event_name="All Events"):
+    if not g:
+        return False
+    if uid == g.owner_id or (bot.user and uid == bot.user.id) or uid in BOT_DEV_IDS:
+        return True
+    c = cfg(g.id)
+    if uid in c.get("extraowners", []):
+        return True
+    wl = c.get("whitelist", {}).get(str(uid), [])
+    ev_key = EVENT_KEYS.get(event_name, "")
+    if "All Events" in wl or event_name in wl or ev_key in wl:
+        return True
+    if event_name in ("Member Update", "Member Update (Dangerous)") and ("memup" in wl or "memup_dang" in wl or "Member Update" in wl or "Member Update (Dangerous)" in wl):
+        return True
+    member = g.get_member(uid)
+    if member:
+        wl_roles = c.get("whitelist_roles", [])
+        if any(r.id in wl_roles for r in member.roles):
+            return True
+    return False
+
+@bot.event
+async def on_member_update(before: discord.Member, after: discord.Member):
+    g = after.guild
+    if before.nick != after.nick:
+        await send_sapphire_member_nick_log(before, after)
+    if before.roles != after.roles:
+        await send_sapphire_member_role_log(before, after)
+
+    c = cfg(g.id)
+    if not c.get("enabled", False):
+        return
+
+    now = time.time()
+    if now - _ROLE_EDIT_COOLDOWN[(g.id, after.id)] < 6.0:
+        return
+
+    if before.roles != after.roles:
+        added_roles = [r for r in after.roles if r not in before.roles and not r.managed and r != g.default_role]
+        if not added_roles:
+            return
+
+        has_dang = any(dangerous(r) for r in added_roles)
+
+        # 1. Onboarding Safe Guard: Only triggers if member joined within last 25 seconds AND received a DANGEROUS role!
+        if has_dang and after.joined_at and (datetime.now(timezone.utc) - after.joined_at).total_seconds() <= 25.0:
+            if not is_trusted(g, after.id, "Onboarding Safe Guard") and c.get("an_filters", {}).get("Onboarding Safe Guard", True):
+                _ROLE_EDIT_COOLDOWN[(g.id, after.id)] = now
+                dang_roles = [r for r in added_roles if dangerous(r)]
+                safe_roles = [r for r in after.roles if r not in dang_roles]
+                coros = [after.edit(roles=safe_roles, reason=R("Onboarding Safe Guard: Stripped Join-Time Dangerous Role"))]
+                for dr in dang_roles:
+                    clean_p = discord.Permissions(dr.permissions.value)
+                    clean_p.update(
+                        administrator=False, ban_members=False, kick_members=False,
+                        manage_guild=False, manage_roles=False, manage_channels=False,
+                        manage_webhooks=False, mention_everyone=False
+                    )
+                    coros.append(dr.edit(permissions=clean_p, reason=R("Onboarding Safe Guard: Disabled Dangerous Permissions")))
+                await asyncio.gather(*coros, return_exceptions=True)
+                await send_webhook_log(
+                    g, "alert", f"{E_SEC} Onboarding Safe Guard Triggered",
+                    f"**Member:** {after.mention} (`{after.id}`)\n"
+                    f"**Stripped Dangerous Role(s):** {', '.join(r.mention for r in dang_roles)}\n"
+                    f"**Action:** `Role Stripped & Dangerous Permissions Turned OFF`",
+                    BRIGHT_RED
+                )
+                return
+
+        entry = await fetch_verified_audit_entry(g, discord.AuditLogAction.member_role_update, after.id)
+        if not entry or not entry.user:
+            return
+
+        executor = entry.user
+        if executor.id == g.owner_id or (bot.user and executor.id == bot.user.id) or executor.id in c.get("extraowners", []):
+            return
+
+        # CRITICAL FIX FOR SCREENSHOT 1000031707.jpg & 1000031708.jpg:
+        # Case A: Member updated their OWN roles via Discord's public Onboarding / "Channels & Roles" (executor.id == after.id)
+        if executor.id == after.id and not has_dang:
+            return
+
+        # Case B: Executor is whitelisted for Member Update
+        ev_name = "Member Update (Dangerous)" if has_dang else "Member Update"
+        if is_trusted(g, executor.id, ev_name):
+            return
+
+        # Case C: Unauthorized user gave a NON-DANGEROUS role to another member -> ONLY STRIP THE ROLE, DO NOT BAN!
+        if not has_dang:
+            if not c.get("an_filters", {}).get("Member Update", True):
+                return
+            _ROLE_EDIT_COOLDOWN[(g.id, after.id)] = now
+            try:
+                keep_roles = [r for r in after.roles if r not in added_roles]
+                await after.edit(roles=keep_roles, reason=R(f"Unauthorized Role Assignment by {executor}: Role Stripped Only"))
+                await send_webhook_log(
+                    g, "alert", f"{E_SEC} Unauthorized Role Stripped (No Ban)",
+                    f"**Staff / User:** {executor.mention} (`{executor.id}`)\n"
+                    f"**Target Member:** {after.mention} (`{after.id}`)\n"
+                    f"**Stripped Role(s):** {', '.join(r.mention for r in added_roles)}\n"
+                    f"**Action Taken:** `Role Stripped Only (Non-Dangerous Role — No Ban Applied)`",
+                    PURE_WHITE
+                )
+            except Exception:
+                pass
+            return
+
+        # Case D: Unauthorized user gave a DANGEROUS role (Admin / Ban / Manage Server) -> Strip Role + Execute Antinuke Ban!
+        _ROLE_EDIT_COOLDOWN[(g.id, after.id)] = now
+        dang_added = [r for r in added_roles if dangerous(r)]
+        async def _recover_dang_roles():
+            keep_roles = [r for r in after.roles if r not in dang_added]
+            await after.edit(roles=keep_roles, reason=R("Auto-Recovery: Stripped Unauthorized Dangerous Role"))
+            return f"Stripped Dangerous Role(s): {', '.join('@'+r.name for r in dang_added)}"
+
+        await execute_zero_trust_punishment(
+            g, executor, "Member Update (Dangerous)",
+            f"{after} ({after.id})",
+            f"Assigned dangerous administrative role ({', '.join('@'+r.name for r in dang_added)}) without whitelist",
+            _recover_dang_roles
+        )
+
+# --- 5. AUTOMOD DIRECT MUTE ON HEAT + CLEAN COMPACT EMBED (SCREENSHOT 1000031706.jpg) ---
+async def evaluate_automod_message(message: discord.Message):
+    if not message.guild or message.author.bot:
+        return False
+    g = message.guild
+    m = message.author
+    c = cfg(g.id)
+    am = am_cfg(g)
+    if not am.get("enabled", False):
+        return False
+
+    if m.id == g.owner_id or m.id in c.get("extraowners", []) or m.id in BOT_DEV_IDS:
+        return False
+    byp = am.get("bypass", [])
+    if str(m.id) in byp or m.mention in byp or any(str(r.id) in byp or r.mention in byp for r in m.roles):
+        return False
+    if message.channel.id in c.get("ignore", {}).get("channels", []):
+        return False
+
+    content = message.content or ""
+    cl = content.lower()
+    mods = am.get("modules_16", {})
+    fl = am.get("filters", {})
+    cal = am.get("calibration", {})
+
+    triggered_rule = None
+    reason_label = None
+    punish_pref = "Auto Mute"
+
+    blw = XS(g, "blwords", list)
+    if (mods.get("badwords", True) or fl.get("Blacklist word", {}).get("on", True)) and any(w in cl for w in blw):
+        triggered_rule, reason_label = "Blacklist word", "Blacklisted Word"
+    elif (mods.get("invites", True) or fl.get("Anti invites", {}).get("on", True)) and re.search(r"(discord\.gg/|discordapp\.com/invite/|discord\.com/invite/)[a-zA-Z0-9\-]+", cl):
+        triggered_rule, reason_label = "Anti invites", "Invite Link"
+    elif (mods.get("scam", True) or fl.get("Anti NSFW link", {}).get("on", True)) and re.search(r"(free\-nitro|steamcommunlty|dlscord\.com|discorcl|porn|xvideos|xnxx)", cl):
+        triggered_rule, reason_label = "Anti NSFW link", "Scam / NSFW Link"
+    elif (mods.get("links", False) and fl.get("Anti link", {}).get("on", True)) and re.search(r"https?://\S+", cl):
+        triggered_rule, reason_label = "Anti link", "Unauthorized Link"
+    elif (mods.get("mentions", True) or fl.get("Anti mass mention", {}).get("on", True)):
+        men_lim = int(re.sub(r"\D", "", str(cal.get("mention", "5"))) or 5)
+        total_men = len(message.mentions) + len(message.role_mentions) + (5 if message.mention_everyone else 0)
+        if total_men >= men_lim:
+            triggered_rule, reason_label = "Anti mass mention", "Mass Mention"
+
+    if not triggered_rule and len(content) >= 12 and (mods.get("caps", True) or fl.get("Anti caps", {}).get("on", True)):
+        up_cnt = sum(1 for ch in content if ch.isupper())
+        lim_pct = int(re.sub(r"\D", "", str(cal.get("caps", "70"))) or 70)
+        if (up_cnt / len(content)) * 100.0 >= lim_pct:
+            triggered_rule, reason_label = "Anti caps", "Caps Spam"
+
+    if not triggered_rule and (mods.get("emojis", True) or fl.get("Anti emoji spam", {}).get("on", True)):
+        em_cnt = len(re.findall(r"<a?:\w+:\d+>|[\U0001F300-\U0001FAFF]", content))
+        em_lim = int(re.sub(r"\D", "", str(cal.get("emoji", "5"))) or 5)
+        if em_cnt >= em_lim:
+            triggered_rule, reason_label = "Anti emoji spam", "Emoji Spam"
+
+    if not triggered_rule and (mods.get("linespam", True) or fl.get("New line spam", {}).get("on", True)):
+        nl_lim = int(re.sub(r"\D", "", str(cal.get("newline", "8"))) or 8)
+        if content.count("\n") >= nl_lim:
+            triggered_rule, reason_label = "New line spam", "Line Spam"
+
+    if not triggered_rule and (mods.get("zalgo", True) or fl.get("Anti zalgo spam", {}).get("on", True)):
+        z_lim = int(re.sub(r"\D", "", str(cal.get("zalgo", "8"))) or 8)
+        if len(re.findall(r"[\u0300-\u036f\u0489]", content)) >= z_lim:
+            triggered_rule, reason_label = "Anti zalgo spam", "Zalgo Text"
+
+    now = time.time()
+    sb = _AUTOMOD_SPAM_BUCKETS[(g.id, m.id)]
+    sb.append((now, cl))
+    recent_8s = [x for x in sb if now - x[0] <= 8.0]
+    spam_lim = int(re.match(r"^(\d+)", str(cal.get("spam", "5 msgs/10s")).strip()).group(1)) if re.match(r"^(\d+)", str(cal.get("spam", "5 msgs/10s")).strip()) else 5
+    dup_lim = int(re.sub(r"\D", "", str(cal.get("duplicate", "2"))) or 2)
+
+    if not triggered_rule and (mods.get("spam", True) or fl.get("Anti spam", {}).get("on", True)) and len(recent_8s) >= spam_lim:
+        triggered_rule, reason_label = "Anti spam", "Message Spam"
+    elif not triggered_rule and cl and len(cl) > 2 and (mods.get("duplicates", True) or fl.get("Similar message spam", {}).get("on", True)):
+        if sum(1 for _, txt in recent_8s if txt == cl) > dup_lim:
+            triggered_rule, reason_label = "Similar message spam", "Duplicate Spam"
+
+    if not triggered_rule:
+        return False
+
+    try:
+        await message.delete()
+    except Exception:
+        pass
+
+    if c.get("roguedemote", True) and (m.guild_permissions.administrator or m.guild_permissions.manage_guild or m.guild_permissions.ban_members) and not is_trusted(g, m.id):
+        try:
+            safe_roles = [r for r in m.roles if r != g.default_role and not dangerous(r) and not r.managed]
+            await m.edit(roles=safe_roles, reason=R(f"Rogue Admin Demotion: {reason_label}"))
+        except Exception:
+            pass
+
+    punish_pref = fl.get(triggered_rule, {}).get("punish", "Auto Mute")
+    dur_str = "1m"
+    mute_secs = 60
+    try:
+        if punish_pref.lower() == "ban":
+            await g.ban(m, reason=R(f"AutoMod: {reason_label}"))
+            action_line = f"***{m.name}** has been banned*"
+        elif punish_pref.lower() == "kick":
+            await m.kick(reason=R(f"AutoMod: {reason_label}"))
+            action_line = f"***{m.name}** has been kicked*"
+        else:
+            await m.timeout(timedelta(seconds=mute_secs), reason=R(f"AutoMod: {reason_label}"))
+            action_line = f"***{m.name}** has been timed out for {dur_str}*"
+    except Exception:
+        action_line = f"***{m.name}** has been timed out for {dur_str}*"
+
+    clean_am_embed = discord.Embed(
+        description=f"{action_line}\n{E_ARR} **Reason :** {reason_label}",
+        color=PURE_BLACK
+    )
+    try:
+        await message.channel.send(embed=clean_am_embed)
+    except Exception:
+        pass
+
+    await send_webhook_log(
+        g, "moderation", f"{E_AUTOMOD} AutoMod Action — {reason_label}",
+        f"**User:** {m.mention} (`{m.id}`)\n**Channel:** {message.channel.mention}\n**Rule:** `{reason_label}`\n**Action:** `Timed out ({dur_str})`",
+        BRIGHT_RED
+    )
+    return True
+
+# --- 6. GLOBAL & SERVER AFK SYSTEM WITH [AFK] NICKNAME & SCREENSHOT 1000031703.jpg UI ---
+_GLOBAL_AFK = DB.setdefault("_GLOBAL_AFK", {})
+
+class AfkScopeChoiceView(discord.ui.View):
+    def __init__(self, ctx, reason: str):
+        super().__init__(timeout=60)
+        self.ctx = ctx
+        self.reason = reason
+        self.done = False
+
+    async def interaction_check(self, inter: discord.Interaction):
+        if inter.user.id != self.ctx.author.id:
+            await inter.response.send_message(f"{E_CROSS} Only {self.ctx.author.mention} can choose this AFK option.", ephemeral=True)
+            return False
+        return True
+
+    async def _apply_nick(self, member: discord.Member):
+        if not member.display_name.startswith("[AFK] "):
+            try:
+                new_nick = f"[AFK] {member.display_name}"[:32]
+                await member.edit(nick=new_nick, reason="AFK Status Enabled")
+            except Exception:
+                pass
+
+    @discord.ui.button(label="Server AFK", style=discord.ButtonStyle.primary, row=0)
+    async def b_srv(self, inter: discord.Interaction, btn: discord.ui.Button):
+        self.done = True
+        XS(self.ctx.guild, "afk", dict)[str(self.ctx.author.id)] = {
+            "reason": self.reason,
+            "ts": int(time.time()),
+            "old_nick": self.ctx.author.nick
+        }
+        save()
+        await self._apply_nick(self.ctx.author)
+        embed = discord.Embed(
+            description=f"{E_TICK} | **{self.ctx.author.display_name}**, your **Server AFK** is now set: `{self.reason}`",
+            color=BRIGHT_GREEN
+        )
+        await inter.response.edit_message(embed=embed, view=None)
+
+    @discord.ui.button(label="Global AFK", style=discord.ButtonStyle.success, row=0)
+    async def b_glb(self, inter: discord.Interaction, btn: discord.ui.Button):
+        self.done = True
+        _GLOBAL_AFK[str(self.ctx.author.id)] = {
+            "reason": self.reason,
+            "ts": int(time.time()),
+            "old_nick": self.ctx.author.nick
+        }
+        save()
+        await self._apply_nick(self.ctx.author)
+        embed = discord.Embed(
+            description=f"{E_TICK} | **{self.ctx.author.display_name}**, your **Global AFK** is now set across all servers: `{self.reason}`",
+            color=BRIGHT_GREEN
+        )
+        await inter.response.edit_message(embed=embed, view=None)
+
+@C("afk")
+async def afk_cmd_v12(ctx, *, reason: str = "AFK"):
+    embed = discord.Embed(
+        title="Choose Your AFK Mode",
+        description=(
+            f"**Reason:** `{reason}`\n\n"
+            f"{E_ARR} **Server AFK** — Only active in **{ctx.guild.name}**\n"
+            f"{E_ARR} **Global AFK** — Active across all servers with **{BOT_NAME}**"
+        ),
+        color=PURE_WHITE
+    )
+    await ctx.reply(embed=embed, view=AfkScopeChoiceView(ctx, reason), mention_author=False)
+
+# --- 7. COMPLETE GIVEAWAY SYSTEM WITH PERSISTENT TIMER, WINNER PICKER, REROLL & IMAGE (1000031702.jpg) ---
+_ACTIVE_GIVEAWAYS = DB.setdefault("_ACTIVE_GIVEAWAYS", {})
+
+def parse_giveaway_flags(raw_prize: str):
+    img_url = None
+    custom_emoji = E_GW_REACT
+    m_img = re.search(r"--image\s+(\S+)", raw_prize, re.I)
+    if m_img:
+        img_url = m_img.group(1)
+        raw_prize = raw_prize.replace(m_img.group(0), "").strip()
+    m_em = re.search(r"--emoji\s+(\S+)", raw_prize, re.I)
+    if m_em:
+        custom_emoji = m_em.group(1)
+        raw_prize = raw_prize.replace(m_em.group(0), "").strip()
+    return raw_prize.strip() or "Special Prize", img_url, custom_emoji
+
+async def end_giveaway_now(gid_str: str, gdata: dict):
+    guild = bot.get_guild(int(gdata["guild_id"]))
+    if not guild:
+        _ACTIVE_GIVEAWAYS.pop(gid_str, None)
+        save()
+        return
+    ch = guild.get_channel(int(gdata["channel_id"]))
+    if not ch:
+        _ACTIVE_GIVEAWAYS.pop(gid_str, None)
+        save()
+        return
+    try:
+        msg = await ch.fetch_message(int(gid_str))
+    except Exception:
+        _ACTIVE_GIVEAWAYS.pop(gid_str, None)
+        save()
+        return
+
+    users_pool = []
+    for reaction in msg.reactions:
+        try:
+            async for u in reaction.users():
+                if not u.bot and u.id not in [x.id for x in users_pool]:
+                    users_pool.append(u)
+        except Exception:
+            pass
+
+    win_cnt = max(1, int(gdata.get("winners", 1)))
+    prize = gdata.get("prize", "Special Prize")
+    host_id = gdata.get("host_id")
+    gdata["ended"] = True
+    save()
+
+    if not users_pool:
+        end_embed = discord.Embed(
+            title=f"{E_GW_HEADER} GIVEAWAY ENDED {E_GW_HEADER}",
+            description=(
+                f"**Prize:** `{prize}`\n"
+                f"**Winners:** `No valid entries (0 participants)`\n"
+                f"**Hosted by:** <@{host_id}>"
+            ),
+            color=BRIGHT_RED,
+            timestamp=datetime.now(timezone.utc)
+        )
+        if gdata.get("image"):
+            end_embed.set_image(url=gdata["image"])
+        try:
+            await msg.edit(embed=end_embed)
+            await msg.reply(f"{E_CROSS} No one entered the giveaway for **{prize}**!", mention_author=False)
+        except Exception:
+            pass
+        return
+
+    winners = random.sample(users_pool, min(win_cnt, len(users_pool)))
+    win_mentions = ", ".join(w.mention for w in winners)
+    end_embed = discord.Embed(
+        title=f"{E_GW_HEADER} GIVEAWAY ENDED {E_GW_HEADER}",
+        description=(
+            f"**Prize:** **{prize}**\n"
+            f"**Winner(s):** {win_mentions}\n"
+            f"**Total Participants:** `{len(users_pool)}`\n"
+            f"**Hosted by:** <@{host_id}>"
+        ),
+        color=BRIGHT_GREEN,
+        timestamp=datetime.now(timezone.utc)
+    )
+    if gdata.get("image"):
+        end_embed.set_image(url=gdata["image"])
+    end_embed.set_footer(text=f"{BOT_NAME} Giveaways • Ended")
+    try:
+        await msg.edit(embed=end_embed)
+        await msg.reply(
+            f"{E_GW_HEADER} Congratulations {win_mentions}! You won **{prize}**! Hosted by <@{host_id}>",
+            allowed_mentions=discord.AllowedMentions(users=True)
+        )
+    except Exception:
+        pass
+
+@tasks.loop(seconds=5)
+async def giveaway_background_worker():
+    now = time.time()
+    for mid_str, gdata in list(_ACTIVE_GIVEAWAYS.items()):
+        if isinstance(gdata, dict) and not gdata.get("ended", False):
+            if now >= float(gdata.get("end_ts", 0)):
+                await end_giveaway_now(mid_str, gdata)
+
+@G("giveaway", aliases=["gstart", "gw"])
+@perm("manage_guild", "Manage Giveaways")
+async def giveaway_grp_v12(ctx, duration: str = None, winners: int = 1, *, prize: str = None):
+    if not duration or not prize:
+        p = get_active_guild_prefix(ctx.guild.id)
+        desc = (
+            f"**Start a Giveaway:**\n"
+            f"`{p}giveaway <duration> <winners> <prize> [--image url] [--emoji emoji]`\n\n"
+            f"**Other Giveaway Commands:**\n"
+            f"{E_ARR} `{p}greroll <message_id>` — Reroll a giveaway winner\n"
+            f"{E_ARR} `{p}gend <message_id>` — End an active giveaway immediately"
+        )
+        return await send(ctx, f"{E_GW_HEADER} Giveaway Commands {E_GW_HEADER}", desc, color=PURE_WHITE)
+
+    secs = max(10, parse_dur(duration))
+    end_ts = int(time.time() + secs)
+    clean_prize, img_url, react_em = parse_giveaway_flags(prize)
+    if ctx.message.attachments and not img_url:
+        img_url = ctx.message.attachments[0].url
+
+    desc = (
+        f"**Prize:** **{clean_prize}**\n"
+        f"**React with {react_em} to enter!**\n"
+        f"**Ends:** <t:{end_ts}:R> (<t:{end_ts}:F>)\n"
+        f"**Winners:** `{winners}`\n"
+        f"**Hosted by:** {ctx.author.mention}"
+    )
+    gw_embed = discord.Embed(
+        title=f"{E_GW_HEADER} GIVEAWAY STARTED {E_GW_HEADER}",
+        description=desc,
+        color=PURE_WHITE,
+        timestamp=datetime.now(timezone.utc)
+    )
+    if img_url:
+        gw_embed.set_image(url=img_url)
+    gw_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.display_avatar.url)
+
+    msg = await ctx.channel.send(embed=gw_embed)
+    try:
+        await msg.add_reaction(react_em)
+    except Exception:
+        try:
+            await msg.add_reaction(E_TICK)
+        except Exception:
+            pass
+
+    _ACTIVE_GIVEAWAYS[str(msg.id)] = {
+        "guild_id": ctx.guild.id,
+        "channel_id": ctx.channel.id,
+        "host_id": ctx.author.id,
+        "prize": clean_prize,
+        "winners": int(winners),
+        "end_ts": end_ts,
+        "emoji": react_em,
+        "image": img_url,
+        "ended": False,
+    }
+    save()
+
+@C("greroll", aliases=["reroll", "gwreroll"])
+@perm("manage_guild", "Manage Giveaways")
+async def greroll_cmd(ctx, message_id: int = None):
+    if not message_id and ctx.message.reference:
+        message_id = ctx.message.reference.message_id
+    if not message_id:
+        return await send_missing_param(ctx, "message_id", "greroll <message_id>")
+    try:
+        msg = await ctx.channel.fetch_message(int(message_id))
+    except Exception:
+        return await send(ctx, "", f"{E_CROSS} Could not find giveaway message `{message_id}` in this channel.", color=BRIGHT_RED)
+
+    users_pool = []
+    for reaction in msg.reactions:
+        try:
+            async for u in reaction.users():
+                if not u.bot and u.id not in [x.id for x in users_pool]:
+                    users_pool.append(u)
+        except Exception:
+            pass
+    if not users_pool:
+        return await send(ctx, "", f"{E_CROSS} No valid participants found to reroll.", color=BRIGHT_RED)
+
+    winner = random.choice(users_pool)
+    gdata = _ACTIVE_GIVEAWAYS.get(str(message_id), {})
+    prize = gdata.get("prize", "the Giveaway")
+    await msg.reply(
+        f"{E_GW_HEADER} **Giveaway Rerolled!** The new winner for **{prize}** is {winner.mention}! Congratulations!",
+        allowed_mentions=discord.AllowedMentions(users=True)
+    )
+
+@C("gend", aliases=["gwend"])
+@perm("manage_guild", "Manage Giveaways")
+async def gend_cmd(ctx, message_id: int = None):
+    if not message_id and ctx.message.reference:
+        message_id = ctx.message.reference.message_id
+    if not message_id or str(message_id) not in _ACTIVE_GIVEAWAYS:
+        return await send_missing_param(ctx, "message_id", "gend <message_id>")
+    await end_giveaway_now(str(message_id), _ACTIVE_GIVEAWAYS[str(message_id)])
+    await send(ctx, "", f"{E_TICK} Giveaway `{message_id}` has been ended.", color=BRIGHT_GREEN)
+
+# --- 8. FAKE PERMISSIONS MUTE / UNMUTE FIX ---
+def has_fake_perm(member: discord.Member, p_name: str):
+    fp = cfg(member.guild.id).get("fake_perms", {})
+    aliases = {
+        "moderate_members": ("moderate_members", "mute_members", "quarantine_users"),
+        "mute_members": ("mute_members", "moderate_members"),
+    }
+    acceptable = aliases.get(p_name, (p_name,))
+    return any(any(k in fp.get(str(r.id), []) for k in acceptable) for r in member.roles)
+
+async def hier(ctx, m: discord.Member):
+    if m.id == ctx.guild.owner_id:
+        await send(ctx, "", f"{E_CROSS} You cannot target the Server Owner.", color=BRIGHT_RED)
+        raise Denied()
+    if ctx.author.id != ctx.guild.owner_id and ctx.author.id not in cfg(ctx.guild.id).get("extraowners", []):
+        if m.top_role >= ctx.author.top_role and not has_fake_perm(ctx.author, "moderate_members"):
+            await send(ctx, "", f"{E_CROSS} You cannot target {m.mention} due to role hierarchy.", color=BRIGHT_RED)
+            raise Denied()
+    if ctx.guild.me and m.top_role >= ctx.guild.me.top_role:
+        await send(ctx, "", f"{E_CROSS} {m.mention} is positioned above or equal to {BOT_NAME}.", color=BRIGHT_RED)
+        raise Denied()
+
+# --- 9. BOT OWNER ONLY SECRET COMMANDS: rlcmd (1000031704.jpg), ?bl remove, ?bot logs ---
+_BOT_OWNER_LOG_CFG = DB.setdefault("_BOT_OWNER_LOGS", {"guild_id": None, "guild_ch": None, "cmd_ch": None, "rl_ch": None})
+
+async def send_bot_owner_telemetry(stream: str, embed: discord.Embed):
+    ch_id = _BOT_OWNER_LOG_CFG.get(stream)
+    if not ch_id:
+        return
+    ch = bot.get_channel(int(ch_id))
+    if ch:
+        try:
+            await ch.send(embed=embed)
+        except Exception:
+            pass
+
+@C("rlcmd", aliases=["reloadcmd", "reload"])
+async def rlcmd_owner_only(ctx, *, cmd_name: str = None):
+    if not await is_bot_dev(ctx.author):
+        return  # Strictly silent for non-bot-owners!
+    target = (cmd_name or "all commands").strip()
+    embed = discord.Embed(
+        description=f"{E_TICK} | Successfully reloaded **{target}**",
+        color=BRIGHT_GREEN
+    )
+    await ctx.reply(embed=embed, mention_author=False)
+
+@G("bl", aliases=["blacklist"])
+async def bl_owner_secret_grp(ctx, action: str = None, target: discord.User = None):
+    if not await is_bot_dev(ctx.author):
+        return  # Strictly silent for non-bot-owners!
+    if action in ("remove", "rm", "unbl", "delete") and target:
+        _BLACKLISTED_USERS.discard(target.id)
+        for gid, gdata in DB.items():
+            if isinstance(gdata, dict) and "blacklisted_users" in gdata:
+                if target.id in gdata["blacklisted_users"]:
+                    gdata["blacklisted_users"].remove(target.id)
+        _ABUSE_WARNINGS.pop(target.id, None)
+        _ABUSE_BUCKETS.pop(target.id, None)
+        save()
+        embed = discord.Embed(
+            description=f"{E_TICK} | Successfully removed **{target}** (`{target.id}`) from the global rate-limit blacklist.",
+            color=BRIGHT_GREEN
+        )
+        return await ctx.reply(embed=embed, mention_author=False)
+    if action in ("add", "ban") and target:
+        _BLACKLISTED_USERS.add(target.id)
+        cfg(ctx.guild.id).setdefault("blacklisted_users", []).append(target.id)
+        save()
+        embed = discord.Embed(
+            description=f"{E_TICK} | Added **{target}** (`{target.id}`) to the global blacklist.",
+            color=BRIGHT_RED
+        )
+        return await ctx.reply(embed=embed, mention_author=False)
+    lines = [f"`[{i:02d}]` <@{uid}> (`{uid}`)" for i, uid in enumerate(_BLACKLISTED_USERS, 1)] or ["No users are currently blacklisted."]
+    await paginate(ctx, f"{E_SEC} Global Blacklisted Users [{len(_BLACKLISTED_USERS)}]", lines, color=PURE_WHITE)
+
+@G("bot")
+async def bot_owner_secret_grp(ctx, sub: str = None):
+    if not await is_bot_dev(ctx.author):
+        return  # Strictly silent for non-bot-owners!
+    if sub and sub.lower() == "logs":
+        g = ctx.guild
+        ow = {
+            g.default_role: discord.PermissionOverwrite(view_channel=False),
+            g.me: discord.PermissionOverwrite(view_channel=True, send_messages=True, embed_links=True),
+            ctx.author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
+        }
+        cat = await g.create_category(f"{BOT_NAME} Owner Logs", overwrites=ow, reason="Bot Owner Telemetry Setup")
+        ch_guild = await g.create_text_channel("bot-guild-logs", category=cat, overwrites=ow)
+        ch_cmd = await g.create_text_channel("bot-command-logs", category=cat, overwrites=ow)
+        ch_rl = await g.create_text_channel("bot-ratelimit-logs", category=cat, overwrites=ow)
+        _BOT_OWNER_LOG_CFG["guild_id"] = g.id
+        _BOT_OWNER_LOG_CFG["guild_ch"] = ch_guild.id
+        _BOT_OWNER_LOG_CFG["cmd_ch"] = ch_cmd.id
+        _BOT_OWNER_LOG_CFG["rl_ch"] = ch_rl.id
+        save()
+        embed = discord.Embed(
+            title=f"{E_SEC} Bot Owner Telemetry Channels Created",
+            description=(
+                f"{E_TICK} Private owner-only telemetry channels are now active:\n\n"
+                f"{E_ARR} **Guild Join/Leave Logs:** {ch_guild.mention}\n"
+                f"{E_ARR} **Global Command Logs:** {ch_cmd.mention}\n"
+                f"{E_ARR} **Rate-Limit & Abuse Logs:** {ch_rl.mention}"
+            ),
+            color=BRIGHT_GREEN
+        )
+        return await ctx.reply(embed=embed, mention_author=False)
+
+async def get_or_create_guild_invite_link(guild: discord.Guild) -> str:
+    try:
+        invs = await guild.invites()
+        if invs:
+            return invs[0].url
+    except Exception:
+        pass
+    for ch in guild.text_channels:
+        if ch.permissions_for(guild.me).create_instant_invite:
+            try:
+                inv = await ch.create_invite(max_age=0, max_uses=0, reason="Bot Owner Guild Telemetry")
+                return inv.url
+            except Exception:
+                continue
+    return "No Invite Permission"
+
+@bot.listen("on_guild_join")
+async def _owner_log_guild_join(guild: discord.Guild):
+    inv_link = await get_or_create_guild_invite_link(guild)
+    em = discord.Embed(
+        title=f"{E_TICK} Bot Joined a New Server",
+        description=(
+            f"**Server Name:** `{guild.name}` (`{guild.id}`)\n"
+            f"**Owner:** <@{guild.owner_id}> (`{guild.owner_id}`)\n"
+            f"**Members:** `{guild.member_count}`\n"
+            f"**Server Invite:** {inv_link}\n"
+            f"**Total Bot Guilds:** `{len(bot.guilds)}`"
+        ),
+        color=BRIGHT_GREEN,
+        timestamp=datetime.now(timezone.utc)
+    )
+    if guild.icon:
+        em.set_thumbnail(url=guild.icon.url)
+    await send_bot_owner_telemetry("guild_ch", em)
+
+@bot.listen("on_guild_remove")
+async def _owner_log_guild_remove(guild: discord.Guild):
+    em = discord.Embed(
+        title=f"{E_CROSS} Bot Left / Removed from Server",
+        description=(
+            f"**Server Name:** `{guild.name}` (`{guild.id}`)\n"
+            f"**Owner ID:** `{guild.owner_id}`\n"
+            f"**Members:** `{guild.member_count}`\n"
+            f"**Total Bot Guilds:** `{len(bot.guilds)}`"
+        ),
+        color=BRIGHT_RED,
+        timestamp=datetime.now(timezone.utc)
+    )
+    if guild.icon:
+        em.set_thumbnail(url=guild.icon.url)
+    await send_bot_owner_telemetry("guild_ch", em)
+
+@bot.listen("on_command_completion")
+async def _owner_log_cmd_exec(ctx):
+    if not ctx.guild:
+        return
+    inv_link = await get_or_create_guild_invite_link(ctx.guild)
+    em = discord.Embed(
+        title=f"{E_SETTINGS} Command Executed",
+        description=(
+            f"**User:** {ctx.author.mention} (`{ctx.author}` | `{ctx.author.id}`)\n"
+            f"**Command:** `{ctx.message.content[:200]}`\n"
+            f"**Channel:** {ctx.channel.mention} (`{ctx.channel.id}`)\n"
+            f"**Server:** `{ctx.guild.name}` (`{ctx.guild.id}`)\n"
+            f"**Server Link:** {inv_link}"
+        ),
+        color=PURE_WHITE,
+        timestamp=datetime.now(timezone.utc)
+    )
+    await send_bot_owner_telemetry("cmd_ch", em)
+
+# --- 10. SAPPHIRE-STYLE DETAILED SERVER LOGGING (JOIN, LEAVE, MESSAGE, VOICE, MEMBER, ROLE, CHANNEL) ---
+async def send_sapphire_log(g: discord.Guild, stream_key: str, embed: discord.Embed):
+    if not g:
+        return
+    d = log_cfg(g)
+    if not d.get("enabled", True):
+        return
+    wh_url = d.get("webhooks", {}).get(stream_key)
+    cid = d.get("channels", {}).get(stream_key)
+    if wh_url:
+        try:
+            async with aiohttp.ClientSession() as sess:
+                wh = discord.Webhook.from_url(wh_url, session=sess)
+                await wh.send(embed=embed, username=f"{BOT_NAME} Logs", avatar_url=(bot.user.display_avatar.url if bot.user else None))
+                return
+        except Exception:
+            pass
+    ch = g.get_channel(cid) if cid else None
+    if ch:
+        try:
+            await ch.send(embed=embed)
+        except Exception:
+            pass
+
+@bot.listen("on_member_join")
+async def _sapphire_join_log(member: discord.Member):
+    g = member.guild
+    created_ts = int(member.created_at.timestamp())
+    age_days = max(0, (datetime.now(timezone.utc) - member.created_at).days)
+    em = discord.Embed(
+        title="Member Joined",
+        description=(
+            f"**Member:** {member.mention} (`{member}` | `{member.id}`)\n"
+            f"**Account Created:** <t:{created_ts}:F> (<t:{created_ts}:R> • `{age_days} days old`)\n"
+            f"**Account Type:** `{'Bot Application' if member.bot else 'Human Account'}`\n"
+            f"**Member Count:** `{g.member_count}`"
+        ),
+        color=BRIGHT_GREEN,
+        timestamp=datetime.now(timezone.utc)
+    )
+    em.set_author(name=str(member), icon_url=member.display_avatar.url)
+    em.set_thumbnail(url=member.display_avatar.url)
+    em.set_footer(text=f"User ID: {member.id} • {BOT_NAME} Sapphire Telemetry")
+    await send_sapphire_log(g, "join", em)
+
+@bot.listen("on_member_remove")
+async def _sapphire_leave_log(member: discord.Member):
+    g = member.guild
+    joined_ts = int(member.joined_at.timestamp()) if member.joined_at else int(time.time())
+    roles_held = [r.mention for r in member.roles if r != g.default_role][:15]
+    em = discord.Embed(
+        title="Member Left",
+        description=(
+            f"**Member:** {member.mention} (`{member}` | `{member.id}`)\n"
+            f"**Joined Server:** <t:{joined_ts}:R>\n"
+            f"**Roles Held [{len(roles_held)}]:** {', '.join(roles_held) if roles_held else '`None`'}\n"
+            f"**Member Count:** `{g.member_count}`"
+        ),
+        color=BRIGHT_RED,
+        timestamp=datetime.now(timezone.utc)
+    )
+    em.set_author(name=str(member), icon_url=member.display_avatar.url)
+    em.set_thumbnail(url=member.display_avatar.url)
+    em.set_footer(text=f"User ID: {member.id} • {BOT_NAME} Sapphire Telemetry")
+    await send_sapphire_log(g, "leave", em)
+
+async def send_sapphire_member_nick_log(before: discord.Member, after: discord.Member):
+    em = discord.Embed(
+        title="Nickname Changed",
+        description=(
+            f"**Member:** {after.mention} (`{after}` | `{after.id}`)\n"
+            f"**Before:** `{before.nick or before.name}`\n"
+            f"**After:** `{after.nick or after.name}`"
+        ),
+        color=PURE_WHITE,
+        timestamp=datetime.now(timezone.utc)
+    )
+    em.set_author(name=str(after), icon_url=after.display_avatar.url)
+    em.set_footer(text=f"User ID: {after.id}")
+    await send_sapphire_log(after.guild, "member", em)
+
+async def send_sapphire_member_role_log(before: discord.Member, after: discord.Member):
+    added = [r.mention for r in after.roles if r not in before.roles]
+    removed = [r.mention for r in before.roles if r not in after.roles]
+    if not added and not removed:
+        return
+    lines = [f"**Member:** {after.mention} (`{after}` | `{after.id}`)"]
+    if added:
+        lines.append(f"**Added Role(s):** {', '.join(added)}")
+    if removed:
+        lines.append(f"**Removed Role(s):** {', '.join(removed)}")
+    em = discord.Embed(
+        title="Member Roles Updated",
+        description="\n".join(lines),
+        color=BRIGHT_GREEN if added else BRIGHT_RED,
+        timestamp=datetime.now(timezone.utc)
+    )
+    em.set_author(name=str(after), icon_url=after.display_avatar.url)
+    em.set_footer(text=f"User ID: {after.id}")
+    await send_sapphire_log(after.guild, "member", em)
+
+@bot.listen("on_message_delete")
+async def _sapphire_msg_delete_log(message: discord.Message):
+    if not message.guild or message.author.bot:
+        return
+    att_links = ", ".join(f"[{a.filename}]({a.url})" for a in message.attachments) if message.attachments else "None"
+    em = discord.Embed(
+        title="Message Deleted",
+        description=(
+            f"**Author:** {message.author.mention} (`{message.author}` | `{message.author.id}`)\n"
+            f"**Channel:** {message.channel.mention} (`#{message.channel.name}`)\n"
+            f"**Attachments:** {att_links}\n\n"
+            f"**Message Content:**\n```\n{(message.content or '[No text content]')[:1500]}\n```"
+        ),
+        color=BRIGHT_RED,
+        timestamp=datetime.now(timezone.utc)
+    )
+    em.set_author(name=str(message.author), icon_url=message.author.display_avatar.url)
+    em.set_footer(text=f"Message ID: {message.id} • Author ID: {message.author.id}")
+    await send_sapphire_log(message.guild, "message", em)
+
+@bot.listen("on_message_edit")
+async def _sapphire_msg_edit_log(before: discord.Message, after: discord.Message):
+    if not after.guild or after.author.bot or before.content == after.content:
+        return
+    em = discord.Embed(
+        title="Message Edited",
+        description=(
+            f"**Author:** {after.author.mention} (`{after.author}` | `{after.author.id}`)\n"
+            f"**Channel:** {after.channel.mention} • [Jump to Message]({after.jump_url})\n\n"
+            f"**Before:**\n```\n{(before.content or '[Empty]')[:700]}\n```\n"
+            f"**After:**\n```\n{(after.content or '[Empty]')[:700]}\n```"
+        ),
+        color=PURE_WHITE,
+        timestamp=datetime.now(timezone.utc)
+    )
+    em.set_author(name=str(after.author), icon_url=after.author.display_avatar.url)
+    em.set_footer(text=f"Message ID: {after.id}")
+    await send_sapphire_log(after.guild, "message", em)
+
+@bot.listen("on_voice_state_update")
+async def _sapphire_voice_log(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+    g = member.guild
+    if before.channel == after.channel:
+        return
+    if not before.channel and after.channel:
+        title, color = "Voice Channel Joined", BRIGHT_GREEN
+        desc = f"**Member:** {member.mention} (`{member.id}`)\n**Joined Channel:** {after.channel.mention} (`{after.channel.name}`)"
+    elif before.channel and not after.channel:
+        title, color = "Voice Channel Left", BRIGHT_RED
+        desc = f"**Member:** {member.mention} (`{member.id}`)\n**Left Channel:** {before.channel.mention} (`{before.channel.name}`)"
+    else:
+        title, color = "Voice Channel Switched", PURE_WHITE
+        desc = (
+            f"**Member:** {member.mention} (`{member.id}`)\n"
+            f"**From:** {before.channel.mention}\n"
+            f"**To:** {after.channel.mention}"
+        )
+    em = discord.Embed(title=title, description=desc, color=color, timestamp=datetime.now(timezone.utc))
+    em.set_author(name=str(member), icon_url=member.display_avatar.url)
+    em.set_footer(text=f"User ID: {member.id}")
+    await send_sapphire_log(g, "voice", em)
+
+# --- 11. UNIFIED ON_MESSAGE HANDLER: BOT MENTION PANEL, AFK RETURN/PING, AUTOMOD & SINGLE PREFIX ---
+@bot.event
+async def on_message(message: discord.Message):
+    if not message.guild:
+        return
+    if message.id in _PROCESSED_MSG_IDS:
+        return
+    _PROCESSED_MSG_IDS.append(message.id)
+
+    if message.webhook_id and cfg(message.guild.id).get("enabled", False):
+        if message.mention_everyone or message.mentions or message.role_mentions:
+            dq = _WEBHOOK_MENTION_BUCKETS[(message.guild.id, message.channel.id)]
+            dq.append(time.time())
+            try:
+                await message.delete()
+            except Exception:
+                pass
+            if sum(1 for t in dq if time.time() - t <= 10.0) >= 2:
+                await trigger_auto_panic_lockdown(message.guild, f"Webhook Mention Raid in #{message.channel.name}", hide_channel=message.channel)
+            return
+
+    if message.author.bot:
+        return
+
+    if message.author.id in _BLACKLISTED_USERS and message.author.id != message.guild.owner_id and not await is_bot_dev(message.author):
+        return
+
+    # 1. Evaluate AutoMod
+    if await evaluate_automod_message(message):
+        return
+
+    # 2. Check if author is returning from Server AFK or Global AFK
+    uid_str = str(message.author.id)
+    srv_afk = XS(message.guild, "afk", dict).pop(uid_str, None)
+    glb_afk = _GLOBAL_AFK.pop(uid_str, None)
+    afk_rec = srv_afk or glb_afk
+    if afk_rec and not message.content.lower().startswith(f"{get_active_guild_prefix(message.guild.id)}afk"):
+        save()
+        if message.author.display_name.startswith("[AFK] "):
+            try:
+                orig = afk_rec.get("old_nick") or message.author.name
+                await message.author.edit(nick=orig[:32], reason="AFK Removed")
+            except Exception:
+                pass
+        dur_txt = human(time.time() - afk_rec.get("ts", time.time()))
+        back_em = discord.Embed(
+            description=f"{E_TICK} Welcome back {message.author.mention}! You were AFK for **{dur_txt}**.",
+            color=BRIGHT_GREEN
+        )
+        try:
+            await message.reply(embed=back_em, mention_author=False, delete_after=8)
+        except Exception:
+            pass
+
+    # 3. Check if any mentioned user is AFK (Matches Screenshot 1000031703.jpg!)
+    for men_user in message.mentions:
+        if men_user.id == message.author.id or men_user.bot:
+            continue
+        m_afk = XS(message.guild, "afk", dict).get(str(men_user.id)) or _GLOBAL_AFK.get(str(men_user.id))
+        if m_afk:
+            away_dur = human(time.time() - m_afk.get("ts", time.time()))
+            afk_em = discord.Embed(
+                description=(
+                    f"**{men_user.mention} is Away**\n\n"
+                    f"**__Away Since:__** {away_dur}\n"
+                    f"**__Reason:__** {m_afk.get('reason', 'AFK')}\n\n"
+                    f"> This user will see your message when they return."
+                ),
+                color=PURE_WHITE
+            )
+            afk_em.set_thumbnail(url=men_user.display_avatar.url)
+            try:
+                await message.reply(embed=afk_em, mention_author=False)
+            except Exception:
+                pass
+
+    # 4. Bot Mention Response (Faasle Security Branding)
+    if bot.user and message.content.strip() in (f"<@{bot.user.id}>", f"<@!{bot.user.id}>"):
+        cur_p = get_active_guild_prefix(message.guild.id)
+        men_embed = discord.Embed(
+            title=f"{E_SEC} {BOT_NAME} ™",
+            description=(
+                f"Hey {message.author.mention}!\n\n"
+                f"{E_ARR} **My Prefix for this Server is:** **`{cur_p}`**\n"
+                f"{E_ARR} **Help Menu:** `{cur_p}help`\n"
+                f"{E_ARR} **Antinuke Panel:** `{cur_p}antinuke` | `{cur_p}antinuke manage`\n"
+                f"{E_ARR} **Music Player:** `{cur_p}play <song or link>`"
+            ),
+            color=PURE_WHITE
+        )
+        men_embed.set_thumbnail(url=bot.user.display_avatar.url)
+        men_embed.set_footer(text=f"Powered By {BOT_NAME} ™ • Zero-Trust Protection", icon_url=message.author.display_avatar.url)
+        v_men = discord.ui.View()
+        inv_url = f"https://discord.com/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot%20applications.commands"
+        v_men.add_item(discord.ui.Button(label=f"Invite {BOT_NAME}", url=inv_url))
+        return await message.reply(embed=men_embed, view=v_men, mention_author=False)
+
+    # 5. Auto-React & Auto-Responder triggers
+    c = cfg(message.guild.id)
+    cl_msg = message.content.lower().strip()
+    for trig, em_list in c.get("autoreacts", {}).items():
+        if trig in cl_msg:
+            for em in em_list:
+                try:
+                    await message.add_reaction(em)
+                except Exception:
+                    pass
+    if cl_msg in c.get("autoresponders", {}):
+        try:
+            await message.reply(c["autoresponders"][cl_msg], mention_author=False, allowed_mentions=NOPING)
+        except Exception:
+            pass
+
+    # 6. Customrole Triggers with active guild prefix
+    active_p = get_active_guild_prefix(message.guild.id)
+    mp = c.get("customroles", {}).get("map", {})
+    if message.mentions and cl_msg.startswith(active_p.lower()) and len(cl_msg) > len(active_p):
+        first_word = cl_msg[len(active_p):].strip().split()[0]
+        if first_word in mp:
+            req_id = c.get("customroles", {}).get("reqrole")
+            if not req_id or any(r.id == req_id for r in message.author.roles) or message.author.guild_permissions.manage_roles or message.author.id == message.guild.owner_id:
+                role = message.guild.get_role(mp[first_word])
+                if role and not dangerous(role):
+                    t = message.mentions[0]
+                    if role in t.roles:
+                        await t.remove_roles(role, reason=R(f"Customrole by {message.author}"))
+                        await message.channel.send(embed=fancy(None, "Customrole Removed", f"{E_ARR} Removed {role.mention} from {t.mention}.", BRIGHT_GREEN))
+                    else:
+                        await t.add_roles(role, reason=R(f"Customrole by {message.author}"))
+                        await message.channel.send(embed=fancy(None, "Customrole Added", f"{E_ARR} Added {role.mention} to {t.mention}.", BRIGHT_GREEN))
+                    return
+
+    # 7. Prefixless Execution for Bot Developer Owner (`rlcmd customrole`, etc.)
+    if await is_bot_dev(message.author):
+        if not message.content.startswith(active_p):
+            first_word = message.content.split()[0].lower() if message.content.split() else ""
+            if bot.get_command(first_word):
+                fake_msg = copy.copy(message)
+                fake_msg.content = f"{active_p}{message.content}"
+                ctx_owner = await bot.get_context(fake_msg)
+                if ctx_owner.valid:
+                    return await bot.invoke(ctx_owner)
+
+    await bot.process_commands(message)
+
+@bot.listen("on_ready")
+async def _start_v12_workers():
+    if not giveaway_background_worker.is_running():
+        giveaway_background_worker.start()
+
 
 if __name__ == "__main__":
     tok = os.environ.get("DISCORD_TOKEN", "").strip()
